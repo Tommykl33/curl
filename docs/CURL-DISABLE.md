@@ -42,6 +42,10 @@ Disable support for the negotiate authentication methods.
 
 Disable **AWS-SIG4** support.
 
+## `CURL_DISABLE_CA_SEARCH`
+
+Disable unsafe CA bundle search in PATH on Windows.
+
 ## `CURL_DISABLE_DICT`
 
 Disable the DICT protocol
@@ -139,6 +143,11 @@ Disable the built-in progress meter
 ## `CURL_DISABLE_PROXY`
 
 Disable support for proxies
+
+## `CURL_DISABLE_IPFS`
+
+Disable the IPFS/IPNS protocols. This affects the curl tool only, where
+IPFS/IPNS protocol support is implemented.
 
 ## `CURL_DISABLE_RTSP`
 

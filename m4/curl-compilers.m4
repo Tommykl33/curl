@@ -1076,7 +1076,6 @@ AC_DEFUN([CURL_SET_COMPILER_WARNING_OPTS], [
             CURL_ADD_COMPILER_WARNINGS([tmp_CFLAGS], [duplicated-branches])
             CURL_ADD_COMPILER_WARNINGS([tmp_CFLAGS], [restrict])
             CURL_ADD_COMPILER_WARNINGS([tmp_CFLAGS], [alloc-zero])
-            tmp_CFLAGS="$tmp_CFLAGS -Wno-format-overflow"
             tmp_CFLAGS="$tmp_CFLAGS -Wformat-truncation=2"
             tmp_CFLAGS="$tmp_CFLAGS -Wimplicit-fallthrough"
           fi
@@ -1264,7 +1263,7 @@ AC_DEFUN([CURL_CHECK_COMPILER_HALT_ON_ERROR], [
   AC_COMPILE_IFELSE([
     AC_LANG_PROGRAM([[
     ]],[[
-      force compilation error
+      #error force compilation error
     ]])
   ],[
     AC_MSG_RESULT([no])

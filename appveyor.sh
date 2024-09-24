@@ -56,6 +56,7 @@ if [ "${BUILD_SYSTEM}" = 'CMake' ]; then
     "-DBUILD_SHARED_LIBS=${SHARED}" \
     "-DENABLE_WEBSOCKETS=${WEBSOCKETS:-}" \
     "-DCMAKE_UNITY_BUILD=${UNITY}" \
+    '-DCURL_TEST_BUNDLES=ON' \
     '-DCURL_WERROR=ON' \
     "-DENABLE_DEBUG=${DEBUG}" \
     "-DENABLE_UNICODE=${ENABLE_UNICODE}" \
@@ -148,4 +149,11 @@ if [[ "${TFLAGS}" != 'skipall' ]] && \
       ./runtests.pl
     )
   fi
+fi
+
+# build examples
+
+if [[ "${EXAMPLES}" = 'ON' ]] && \
+   [ "${BUILD_SYSTEM}" = 'CMake' ]; then
+  cmake --build _bld --config "${PRJ_CFG}" --parallel 2 --target curl-examples
 fi

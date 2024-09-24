@@ -21,7 +21,6 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-/* lib/curl_config.h.in. Generated somehow by cmake.  */
 
 /* Location of default ca bundle */
 #cmakedefine CURL_CA_BUNDLE "${CURL_CA_BUNDLE}"
@@ -131,6 +130,9 @@
 /* disables proxies */
 #cmakedefine CURL_DISABLE_PROXY 1
 
+/* disables IPFS from the curl tool */
+#cmakedefine CURL_DISABLE_IPFS 1
+
 /* disables RTSP */
 #cmakedefine CURL_DISABLE_RTSP 1
 
@@ -157,6 +159,12 @@
 
 /* disables verbose strings */
 #cmakedefine CURL_DISABLE_VERBOSE_STRINGS 1
+
+/* disables unsafe CA bundle search on Windows from the curl tool */
+#cmakedefine CURL_DISABLE_CA_SEARCH 1
+
+/* safe CA bundle search (within the curl tool directory) on Windows */
+#cmakedefine CURL_CA_SEARCH_SAFE 1
 
 /* to make a symbol visible */
 #cmakedefine CURL_EXTERN_SYMBOL ${CURL_EXTERN_SYMBOL}

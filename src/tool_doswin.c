@@ -600,7 +600,14 @@ char **__crt0_glob_function(char *arg)
 
 #ifdef _WIN32
 
-/*
+#if !defined(CURL_WINDOWS_UWP) && \
+  !defined(CURL_DISABLE_CA_SEARCH) && !defined(CURL_CA_SEARCH_SAFE)
+/* Search and set the CA cert file for Windows.
+ *
+ * Do not call this function if Schannel is the selected SSL backend. We allow
+ * setting CA location for Schannel only when explicitly specified by the user
+ * via CURLOPT_CAINFO / --cacert.
+ *
  * Function to find CACert bundle on a Win32 platform using SearchPath.
  * (SearchPath is already declared via inclusions done in setup header file)
  * (Use the ASCII version instead of the Unicode one!)
@@ -614,48 +621,30 @@ char **__crt0_glob_function(char *arg)
  * For WinXP and later search order actually depends on registry value:
  * HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\SafeProcessSearchMode
  */
-
 CURLcode FindWin32CACert(struct OperationConfig *config,
-                         curl_sslbackend backend,
                          const TCHAR *bundle_file)
 {
   CURLcode result = CURLE_OK;
+  DWORD res_len;
+  TCHAR buf[PATH_MAX];
+  TCHAR *ptr = NULL;
 
-#ifdef CURL_WINDOWS_UWP
-  (void)config;
-  (void)backend;
-  (void)bundle_file;
-#else
-  /* Search and set cert file only if libcurl supports SSL.
-   *
-   * If Schannel is the selected SSL backend then these locations are
-   * ignored. We allow setting CA location for schannel only when explicitly
-   * specified by the user via CURLOPT_CAINFO / --cacert.
-   */
-  if(feature_ssl && backend != CURLSSLBACKEND_SCHANNEL) {
+  buf[0] = TEXT('\0');
 
-    DWORD res_len;
-    TCHAR buf[PATH_MAX];
-    TCHAR *ptr = NULL;
-
-    buf[0] = TEXT('\0');
-
-    res_len = SearchPath(NULL, bundle_file, NULL, PATH_MAX, buf, &ptr);
-    if(res_len > 0) {
-      char *mstr = curlx_convert_tchar_to_UTF8(buf);
-      Curl_safefree(config->cacert);
-      if(mstr)
-        config->cacert = strdup(mstr);
-      curlx_unicodefree(mstr);
-      if(!config->cacert)
-        result = CURLE_OUT_OF_MEMORY;
-    }
+  res_len = SearchPath(NULL, bundle_file, NULL, PATH_MAX, buf, &ptr);
+  if(res_len > 0) {
+    char *mstr = curlx_convert_tchar_to_UTF8(buf);
+    Curl_safefree(config->cacert);
+    if(mstr)
+      config->cacert = strdup(mstr);
+    curlx_unicodefree(mstr);
+    if(!config->cacert)
+      result = CURLE_OUT_OF_MEMORY;
   }
-#endif
 
   return result;
 }
-
+#endif
 
 /* Get a list of all loaded modules with full paths.
  * Returns slist on success or NULL on error.

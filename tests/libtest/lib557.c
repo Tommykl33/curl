@@ -27,8 +27,6 @@
  * curl_m*printf formatting capabilities and handling of some data types.
  */
 
-#define CURL_NO_FMT_CHECKS /* disable compiler *printf format checks */
-
 #include "test.h"
 
 #include <limits.h>
@@ -38,6 +36,15 @@
 #endif
 
 #include "memdebug.h"
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
+#if !defined(__clang__) && __GNUC__ >= 7
+#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif
+#endif
 
 #if (SIZEOF_CURL_OFF_T > SIZEOF_LONG)
 #  define MPRNT_SUFFIX_CURL_OFF_T  LL
@@ -1507,3 +1514,7 @@ CURLcode test(char *URL)
   else
     return CURLE_OK;
 }
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif

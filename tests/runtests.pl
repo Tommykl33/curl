@@ -122,6 +122,7 @@ my $libtool;
 my $repeat = 0;
 
 my $start;          # time at which testing started
+my $args;           # command-line arguments
 
 my $uname_release = `uname -r`;
 my $is_wsl = $uname_release =~ /Microsoft$/;
@@ -480,6 +481,7 @@ sub parseprotocols {
 # Information to do with servers is displayed in displayserverfeatures, after
 # the server initialization is performed.
 sub checksystemfeatures {
+    my $proto;
     my $feat;
     my $curl;
     my $libcurl;
@@ -623,8 +625,9 @@ sub checksystemfeatures {
             }
         }
         elsif($_ =~ /^Protocols: (.*)/i) {
+            $proto = $1;
             # these are the protocols compiled in to this libcurl
-            parseprotocols($1);
+            parseprotocols($proto);
         }
         elsif($_ =~ /^Features: (.*)/i) {
             $feat = $1;
@@ -847,12 +850,14 @@ sub checksystemfeatures {
     logmsg ("********* System characteristics ******** \n",
             "* $curl\n",
             "* $libcurl\n",
+            "* Protocols: $proto\n",
             "* Features: $feat\n",
             "* Disabled: $dis\n",
             "* Host: $hostname\n",
             "* System: $hosttype\n",
             "* OS: $hostos\n",
-            "* Perl: $^V ($^X)\n");
+            "* Perl: $^V ($^X)\n",
+            "* Args: $args\n");
 
     if($jobs) {
         # Only show if not the default for now
@@ -864,8 +869,9 @@ sub checksystemfeatures {
                "*\n");
     }
 
-    logmsg sprintf("* Env: %s%s%s", $valgrind?"Valgrind ":"",
+    logmsg sprintf("* Env: %s%s%s%s", $valgrind?"Valgrind ":"",
                    $run_event_based?"event-based ":"",
+                   $bundle?"bundle ":"",
                    $nghttpx_h3);
     logmsg sprintf("%s\n", $libtool?"Libtool ":"");
     logmsg ("* Seed: $randseed\n");
@@ -2204,6 +2210,8 @@ if(@ARGV && $ARGV[-1] eq '$TFLAGS') {
     push(@ARGV, split(' ', $ENV{'TFLAGS'})) if defined($ENV{'TFLAGS'});
 }
 
+$args = join(' ', @ARGV);
+
 $valgrind = checktestcmd("valgrind");
 my $number=0;
 my $fromnum=-1;
@@ -2232,6 +2240,10 @@ while(@ARGV) {
         # use this curl only to talk to APIs (currently only CI test APIs)
         $ACURL=shell_quote($ARGV[1]);
         shift @ARGV;
+    }
+    elsif ($ARGV[0] eq "-bundle") {
+        # use test bundles
+        $bundle=1;
     }
     elsif ($ARGV[0] eq "-d") {
         # have the servers display protocol output
@@ -2410,6 +2422,7 @@ Usage: runtests.pl [options] [test selection(s)]
   -a       continue even if a test fails
   -ac path use this curl only to talk to APIs (currently only CI test APIs)
   -am      automake style output PASS/FAIL: [number] [name]
+  -bundle  use test bundles
   -c path  use this curl executable
   -d       display server debug info
   -e       event-based execution

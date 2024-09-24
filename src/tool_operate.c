@@ -377,7 +377,7 @@ static CURLcode pre_transfer(struct GlobalConfig *global,
         break;
       default:
         per->infd = open(per->uploadfile, O_RDONLY | O_BINARY,
-                        "rfm=stmlf", "ctx=stm");
+                         "rfm=stmlf", "ctx=stm");
       }
     }
     if(per->infd == -1)
@@ -793,6 +793,9 @@ static CURLcode url_proto(char **url,
                        CURLU_GUESS_SCHEME | CURLU_NON_SUPPORT_SCHEME) &&
          !curl_url_get(uh, CURLUPART_SCHEME, &schemep,
                        CURLU_DEFAULT_SCHEME)) {
+#ifdef CURL_DISABLE_IPFS
+        (void)config;
+#else
         if(curl_strequal(schemep, proto_ipfs) ||
            curl_strequal(schemep, proto_ipns)) {
           result = ipfs_url_rewrite(uh, schemep, url, config);
@@ -805,6 +808,7 @@ static CURLcode url_proto(char **url,
             config->synthetic_error = TRUE;
         }
         else
+#endif /* !CURL_DISABLE_IPFS */
           proto = proto_token(schemep);
 
         curl_free(schemep);
@@ -1086,6 +1090,12 @@ static CURLcode single_transfer(struct GlobalConfig *global,
              * OperationConfig, so that it does not need to be opened/closed
              * for every transfer.
              */
+            if(config->create_dirs) {
+              result = create_dir_hierarchy(config->headerfile, global);
+              /* create_dir_hierarchy shows error upon CURLE_WRITE_ERROR */
+              if(result)
+                break;
+            }
             if(!per->prev || per->prev->config != config) {
               newfile = fopen(config->headerfile, "wb");
               if(newfile)
@@ -3014,7 +3024,8 @@ static CURLcode transfer_per_config(struct GlobalConfig *global,
    * too. Just for the sake of it.
    */
   capath_from_env = false;
-  if(!config->cacert &&
+  if(feature_ssl &&
+     !config->cacert &&
      !config->capath &&
      (!config->insecure_ok || (config->doh_url && !config->doh_insecure_ok))) {
     CURL *curltls = curl_easy_init();
@@ -3036,7 +3047,7 @@ static CURLcode transfer_per_config(struct GlobalConfig *global,
      * default filename curl-ca-bundle.crt in the user's PATH.
      *
      * If Schannel is the selected SSL backend then these locations are
-     * ignored. We allow setting CA location for schannel only when explicitly
+     * ignored. We allow setting CA location for Schannel only when explicitly
      * specified by the user via CURLOPT_CAINFO / --cacert.
      */
     if(tls_backend_info->backend != CURLSSLBACKEND_SCHANNEL) {
@@ -3078,9 +3089,18 @@ static CURLcode transfer_per_config(struct GlobalConfig *global,
       }
 
 #ifdef _WIN32
-      if(!env)
-        result = FindWin32CACert(config, tls_backend_info->backend,
-                                 TEXT("curl-ca-bundle.crt"));
+      if(!env) {
+#if defined(CURL_CA_SEARCH_SAFE)
+        char *cacert = NULL;
+        FILE *cafile = Curl_execpath("curl-ca-bundle.crt", &cacert);
+        if(cafile) {
+          fclose(cafile);
+          config->cacert = strdup(cacert);
+        }
+#elif !defined(CURL_WINDOWS_UWP) && !defined(CURL_DISABLE_CA_SEARCH)
+        result = FindWin32CACert(config, TEXT("curl-ca-bundle.crt"));
+#endif
+      }
 #endif
     }
     curl_easy_cleanup(curltls);

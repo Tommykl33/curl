@@ -24,6 +24,7 @@
 
 #include "test.h"
 #include "testtrace.h"
+#include "memdebug.h"
 
 #ifdef USE_WEBSOCKETS
 
@@ -55,6 +56,7 @@ static void websocket(CURL *curl)
       if(result == CURLE_AGAIN)
         /* crude busy-loop */
         continue;
+      fclose(save);
       printf("curl_ws_recv returned %d\n", result);
       return;
     }
